@@ -1,0 +1,13 @@
+
+# Core DB & Async
+aiosqlite>=0.19
+aiohttp>=3.9
+
+# Utils
+python-dotenv>=1.0
+networkx>=3.0
+
+# MCP & AI
+fastmcp>=2.0
+mcp>=1.0
+httpx>=0.27

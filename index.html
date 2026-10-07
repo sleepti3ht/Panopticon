@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panopticon CVE Map</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👁️</text></svg>">
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="nav-sidebar">
+        <div class="nav-header">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+            <line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/>
+          </svg>
+        </div>
+        <nav class="nav-menu">
+          <a href="#" class="nav-item active" id="nav-dashboard">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="#" class="nav-item" id="nav-search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <span>Search</span>
+          </a>
+          <a href="#" class="nav-item" id="nav-vendors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+            <span>Vendors</span>
+          </a>
+          <a href="#" class="nav-item" id="nav-reports">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <span>Reports</span>
+          </a>
+        </nav>
+
+        <div class="nav-footer">
+          <div class="nav-user" id="nav-user-btn" title="Settings">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </div>
+
+          <div id="settings-popover" class="settings-popover hidden">
+            <div class="popover-header">
+              <h4>API Settings</h4>
+              <button id="btn-close-popover" class="btn-close-small">✕</button>
+            </div>
+            <div class="popover-body">
+              <div class="form-group">
+                <label for="nvd-api-key">NVD API Key</label>
+                <input type="password" id="nvd-api-key" placeholder="Enter NVD API key" />
+              </div>
+              <div class="form-group">
+                <label for="openrouter-api-key">OpenRouter API Key</label>
+                <input type="password" id="openrouter-api-key" placeholder="Enter OpenRouter API key" />
+              </div>
+              <button id="btn-save-settings" class="btn-primary btn-small">Save</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="top-bar">
+          <div class="page-title">
+            <h1>Panopticon</h1>
+            <span class="breadcrumb">CVE Intelligence Map</span>
+          </div>
+          <div class="metrics-row">
+            <div class="metric-card">
+              <div class="metric-label">Total CVEs</div>
+              <div class="metric-value" id="metric-total">0</div>
+              <div class="metric-trend up"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg><span>Loaded</span></div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Critical</div>
+              <div class="metric-value" id="metric-critical">0</div>
+              <div class="metric-trend down"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg><span>CVSS ≥ 9.0</span></div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Vendors</div>
+              <div class="metric-value" id="metric-vendors">0</div>
+              <div class="metric-trend neutral"><span>Unique</span></div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Avg CVSS</div>
+              <div class="metric-value" id="metric-avg-cvss">0.0</div>
+              <div class="metric-trend neutral"><span>Across set</span></div>
+            </div>
+          </div>
+          <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
+            <svg id="theme-icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg id="theme-icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </header>
+
+        <div class="workspace">
+          <!-- 1. Global Search Panel -->
+          <div id="search-panel" class="search-panel-global hidden">
+            <div class="panel-header">
+              <h3>Global Search</h3>
+              <button id="btn-close-search" class="btn-close">✕</button>
+            </div>
+            <div class="search-input-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="global-search-input" placeholder="Search CVEs, vendors, CWE..." />
+            </div>
+            <div id="search-results" class="search-results">
+              <div class="loading-search">Start typing to search...</div>
+            </div>
+          </div>
+
+          <!-- 2. Vendors Panel -->
+          <div id="vendors-panel" class="vendor-search-panel hidden">
+            <div class="panel-header">
+              <h3>Vendors</h3>
+              <button id="btn-close-vendors" class="btn-close">✕</button>
+            </div>
+            <div class="search-input-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="vendor-filter-input" placeholder="Filter vendors..." />
+            </div>
+            <div id="vendor-list" class="vendor-list">
+              <div class="loading-vendors">Loading vendors...</div>
+            </div>
+          </div>
+
+          <!-- 3. Reports Panel (inside workspace) -->
+          <div id="reports-panel" class="reports-panel hidden">
+            <div class="panel-header">
+              <h3>Saved Conversations</h3>
+              <button id="btn-close-reports" class="btn-close">✕</button>
+            </div>
+            <div id="reports-list" class="reports-list">
+              <div class="loading-reports">Loading reports...</div>
+            </div>
+          </div>
+
+          <!-- 4. Main Graph Loading Panel (Dashboard) -->
+          <div class="search-panel">
+            <div class="search-input-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="vendor-search" placeholder="Search vendor (e.g., microsoft)" />
+            </div>
+            <div class="search-input-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <input type="number" id="year-filter" placeholder="Min year (e.g., 2015)" min="1990" max="2026" value="2015" />
+            </div>
+            <button id="btn-load" class="btn-primary">Load Graph</button>
+            <div id="status-log" class="status-log">Ready.</div>
+          </div>
+
+          <div class="graph-area" id="graph-container"></div>
+
+          <aside class="details-panel hidden" id="details-panel">
+            <div class="details-header">
+              <h3 id="detail-title">CVE-XXXX-XXXXX</h3>
+              <div class="header-buttons">
+                <button id="btn-expand-details" class="btn-icon" title="Expand panel">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 3h6v6"/><path d="M9 21H3v-6"/>
+                    <path d="M21 3l-7 7"/><path d="M3 21l7-7"/>
+                  </svg>
+                </button>
+                <button id="btn-close-details" class="btn-close">✕</button>
+              </div>
+            </div>
+            <div class="details-body" id="details-body"></div>
+          </aside>
+        </div>
+
+        <footer class="status-bar">
+          <div class="status-left">
+            <span class="status-item">Outline</span>
+            <span class="status-item">Past Performance <span class="badge" id="badge-cves">0</span></span>
+            <span class="status-item">Key Personnel <span class="badge" id="badge-vendors">0</span></span>
+          </div>
+          <div class="status-right">
+            <span class="status-item" id="status-text">Idle</span>
+          </div>
+        </footer>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
