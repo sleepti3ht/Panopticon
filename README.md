@@ -28,6 +28,7 @@ Built on **Tauri 2** (Rust shell), **Python** (async AI + MCP client), and **Van
   <img src="screenshots/03-reports-panel.png" width="49%" alt="Saved conversations with pins and tags" />
   <img src="screenshots/04-dashboard-light.png" width="49%" alt="Light theme" />
 </p>
+
 ---
 
 ## Get started
