@@ -1,7 +1,7 @@
 
 <div align="center">
 
-<a href="https://github.com/sleepti3ht/Panopticon"><img src="https://raw.githubusercontent.com/sleepti3ht/Panopticon/main/src-tauri/icons/icon.png" width="56" height="56" alt="Panopticon logo"/></a>
+<a href="https://github.com/sleepti3ht/Panopticon"><img src="https://raw.githubusercontent.com/sleepti3ht/Panopticon/main/src-tauri/icons/icon.png"  width="140" alt="Panopticon logo"/></a>
 
 # Panopticon
 
@@ -19,17 +19,14 @@
 > 👁️ **A desktop-native CVE intelligence map** — interactive force-directed graph of vendor↔CVE relationships wired to a local AI agent that drafts mitigation plans, maintains a versioned chat history, and resumes conversations across sessions.
 
 Built on **Tauri 2** (Rust shell), **Python** (async AI + MCP client), and **Vanilla JS** with `vis-network`. Local-first, no telemetry, no cloud lock-in.
-<p align="center">
-  <img src="docs/assets/logo.png" width="140" alt="Panopticon logo" />
-</p>
 
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/01-dashboard-dark.png" width="49%" alt="Threat graph dashboard, dark theme" />
-  <img src="docs/screenshots/02-cve-chat-dark.png" width="49%" alt="CVE details with AI mitigation chat" />
-  <img src="docs/screenshots/03-reports-panel.png" width="49%" alt="Saved conversations with pins and tags" />
-  <img src="docs/screenshots/04-dashboard-light.png" width="49%" alt="Light theme" />
+  <img src="screenshots/01-dashboard-dark.png" width="49%" alt="Threat graph dashboard, dark theme" />
+  <img src="screenshots/02-cve-chat-dark.png" width="49%" alt="CVE details with AI mitigation chat" />
+  <img src="screenshots/03-reports-panel.png" width="49%" alt="Saved conversations with pins and tags" />
+  <img src="screenshots/04-dashboard-light.png" width="49%" alt="Light theme" />
 </p>
 ---
 
