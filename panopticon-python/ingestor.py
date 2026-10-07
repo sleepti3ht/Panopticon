@@ -1,8 +1,9 @@
 import aiohttp
 import asyncio
 import logging
+import sys
 from datetime import datetime, timedelta, timezone
-from config import NVD_API_KEY, NVD_BASE_URL, NVD_REQUEST_DELAY
+from config import NVD_API_KEY, NVD_BASE_URL, NVD_REQUEST_DELAY, INGEST_LOOKBACK_DAYS, INGEST_CHUNK_DAYS
 from db import init_db, insert_cve
 
 logger = logging.getLogger(__name__)
@@ -123,104 +124,95 @@ def parse_nvd_cve(vuln: dict) -> dict:
         "references": references
     }
 
-async def fetch_latest_cves(limit: int = 4000):
+async def fetch_latest_cves(limit: int = 4000, lookback_days: int = None):
     """
-    Fetch the most recent CVEs with CPE data.
-    
-    Fetches CVEs from the last ~90 days (Q4 2025) and stops when reaching
-    the specified limit of CVEs with valid CPE data.
-    
-    Args:
-        limit: Maximum number of CVEs with CPE to ingest (default: 4000)
-    
-    Returns:
-        Total number of CVEs ingested
+    Fetch the most recent CVEs with CPE data using a rolling window.
+    The window ends at request time (datetime.now) and walks backwards
+    in chunks to respect the NVD 120-day-per-request limit.
     """
     await init_db()
-    
-    # Calculate date range: last 90 days from today
-    # NVD API 2.0 has strict 120-day limit per request
+
+    if lookback_days is None:
+        lookback_days = INGEST_LOOKBACK_DAYS
+
     end_date = datetime.now(timezone.utc)
-    start_date = end_date - timedelta(days=90)
-    
-    logger.info(f"Fetching latest CVEs from {start_date.date()} to {end_date.date()}")
+    window_start = end_date - timedelta(days=lookback_days)
+
+    logger.info(f"Rolling window: {window_start.date()} -> {end_date.date()} ({lookback_days} days)")
     logger.info(f"Target: {limit} CVEs with CPE data")
-    
+
     headers = {}
     if NVD_API_KEY:
         headers["apiKey"] = NVD_API_KEY
         logger.info(f"Rate limit: {NVD_REQUEST_DELAY:.1f}s between requests.")
-    
+
     total_ingested = 0
     total_skipped_no_cpe = 0
-    
-    params = {
-        "pubStartDate": start_date.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
-        "pubEndDate": end_date.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
-        "resultsPerPage": 2000,
-        "startIndex": 0
-    }
-    
+
     async with aiohttp.ClientSession() as session:
-        while total_ingested < limit:
-            await asyncio.sleep(NVD_REQUEST_DELAY)
-            
-            async with session.get(NVD_BASE_URL, params=params, headers=headers) as resp:
-                if resp.status == 403:
-                    logger.error("403 Forbidden. Check API key or rate limit.")
+        chunk_end = end_date
+        while chunk_end > window_start and total_ingested < limit:
+            chunk_start = max(chunk_end - timedelta(days=INGEST_CHUNK_DAYS), window_start)
+
+            params = {
+                "pubStartDate": chunk_start.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+                "pubEndDate": chunk_end.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+                "resultsPerPage": 2000,
+                "startIndex": 0,
+            }
+
+            while total_ingested < limit:
+                await asyncio.sleep(NVD_REQUEST_DELAY)
+
+                async with session.get(NVD_BASE_URL, params=params, headers=headers) as resp:
+                    if resp.status == 403:
+                        logger.error("403 Forbidden. Check API key or rate limit.")
+                        return total_ingested
+                    if resp.status == 404:
+                        logger.error("404 Not Found. Date range exceeds 120 days or is invalid.")
+                        break
+                    if resp.status == 503:
+                        logger.warning("503 Service Unavailable. Retrying in 30s...")
+                        await asyncio.sleep(30)
+                        continue
+                    resp.raise_for_status()
+                    data = await resp.json()
+
+                vulnerabilities = data.get("vulnerabilities", [])
+                total_results = data.get("totalResults", 0)
+
+                logger.info(f"Fetched {len(vulnerabilities)} CVEs (offset {params['startIndex']}/{total_results})")
+
+                batch_ingested = 0
+                for vuln in vulnerabilities:
+                    if total_ingested >= limit:
+                        break
+                    cve_data = parse_nvd_cve(vuln)
+                    if cve_data["affected_products"]:
+                        await insert_cve(cve_data)
+                        batch_ingested += 1
+                        total_ingested += 1
+                    else:
+                        total_skipped_no_cpe += 1
+
+                logger.info(f"Batch: {batch_ingested} ingested. Total: {total_ingested}/{limit}")
+
+                current_offset = params["startIndex"] + len(vulnerabilities)
+                if current_offset >= total_results or not vulnerabilities:
                     break
-                if resp.status == 404:
-                    logger.error("404 Not Found. Date range exceeds 120 days or is invalid.")
-                    break
-                if resp.status == 503:
-                    logger.warning("503 Service Unavailable. Retrying in 30s...")
-                    await asyncio.sleep(30)
-                    continue
-                resp.raise_for_status()
-                data = await resp.json()
-            
-            vulnerabilities = data.get("vulnerabilities", [])
-            total_results = data.get("totalResults", 0)
-            
-            logger.info(f"Fetched {len(vulnerabilities)} CVEs (offset {params['startIndex']}/{total_results})")
-            
-            batch_ingested = 0
-            batch_skipped = 0
-            
-            for vuln in vulnerabilities:
-                if total_ingested >= limit:
-                    break
-                
-                cve_data = parse_nvd_cve(vuln)
-                if cve_data["affected_products"]:
-                    await insert_cve(cve_data)
-                    batch_ingested += 1
-                    total_ingested += 1
-                else:
-                    batch_skipped += 1
-                    total_skipped_no_cpe += 1
-            
-            logger.info(f"Batch: {batch_ingested} ingested, {batch_skipped} skipped (no CPE). Total: {total_ingested}/{limit}")
-            
-            # Check if we reached the limit or end of data
-            current_offset = params["startIndex"] + len(vulnerabilities)
-            if current_offset >= total_results or not vulnerabilities:
-                logger.info("Reached end of available data")
-                break
-            
-            if total_ingested >= limit:
-                logger.info(f"Reached target limit: {limit} CVEs")
-                break
-            
-            params["startIndex"] = current_offset
-    
+                params["startIndex"] = current_offset
+
+            # Move to the previous chunk
+            chunk_end = chunk_start - timedelta(seconds=1)
+
     logger.info(f"Ingestion complete. Total ingested: {total_ingested}, skipped (no CPE): {total_skipped_no_cpe}")
     return total_ingested
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    
-    # Fetch 2000-4000 most recent CVEs with CPE data
-    # This will pull from the last ~90 days (Q4 2025)
-    asyncio.run(fetch_latest_cves(limit=4000))
+
+    # CLI: python ingestor.py [limit] [lookback_days]
+    limit = int(sys.argv[1]) if len(sys.argv) > 1 else 4000
+    lookback = int(sys.argv[2]) if len(sys.argv) > 2 else None
+    asyncio.run(fetch_latest_cves(limit=limit, lookback_days=lookback))

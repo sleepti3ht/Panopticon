@@ -35,7 +35,7 @@ if not OPENROUTER_API_KEY:
     sys.exit(1)
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "google/gemma-4-31b-it:free")
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "nvidia/nemotron-3.5-lightning:free")
 
 # In-memory LLM response cache (key: hash of model+messages, value: response text)
 # Max 50 entries to prevent unbounded memory growth
@@ -304,12 +304,14 @@ if __name__ == "__main__":
         sys.stdout.reconfigure(encoding="utf-8")
     if sys.stderr.encoding != "utf-8":
         sys.stderr.reconfigure(encoding="utf-8")
+    if sys.stdin.encoding != "utf-8":
+        sys.stdin.reconfigure(encoding="utf-8")
 
-    # --chat now accepts a JSON string with conversation history
-    if len(sys.argv) >= 4 and sys.argv[1] == "--chat":
+    # --chat reads conversation history from stdin (bypasses Windows 32KB CLI limit)
+    if len(sys.argv) >= 3 and sys.argv[1] == "--chat":
         cve_id = sys.argv[2]
-        messages_json = sys.argv[3]  # JSON array string
-        model = sys.argv[4] if len(sys.argv) > 4 else DEFAULT_MODEL
+        model = sys.argv[3] if len(sys.argv) > 3 else DEFAULT_MODEL
+        messages_json = sys.stdin.read()
 
         result = asyncio.run(chat_with_history(cve_id, messages_json, model))
         print(result)
@@ -322,6 +324,6 @@ if __name__ == "__main__":
         logger.error("Invalid arguments")
         print(
             "Usage: ai_agent.py --mitigate <cve_id> [model] OR "
-            "ai_agent.py --chat <cve_id> <messages_json> [model]",
+            "ai_agent.py --chat <cve_id> [model] (history via stdin)",
             file=sys.stderr,
         )

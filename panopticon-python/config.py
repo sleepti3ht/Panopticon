@@ -22,7 +22,8 @@ MAX_EGO_DEPTH = 2
 
 # Filter by publication year (only CVEs after this year)
 MIN_PUBLISH_YEAR = 2020
-
+INGEST_LOOKBACK_DAYS = 90
+INGEST_CHUNK_DAYS = 110
 # Database
 DB_PATH = "panopticon.db"
 

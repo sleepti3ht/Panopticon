@@ -1,5 +1,7 @@
 use tauri::command;
 use std::process::Command;
+use std::io::Write;
+use std::process::Stdio;
 use std::env;
 use std::path::PathBuf;
 
@@ -65,8 +67,38 @@ async fn generate_mitigation(cve_id: String, model: String) -> Result<String, St
 
 #[command]
 async fn chat_with_agent(cve_id: String, messages: String, model: String) -> Result<String, String> {
-    // Messages are passed as a JSON string via CLI argument
-    run_python("ai_agent.py", &["--chat", &cve_id, &messages, &model])
+    let (script_path, python_path) = python_paths("ai_agent.py")?;
+
+    // Pass conversation history via stdin: Windows CLI args are limited to ~32KB,
+    // and long chats with mitigation payloads exceed that silently.
+    let mut child = Command::new(&python_path)
+        .arg(&script_path)
+        .arg("--chat")
+        .arg(&cve_id)
+        .arg(&model)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn python at {:?}: {}", python_path, e))?;
+
+    // Write payload, then drop stdin so the child sees EOF
+    {
+        let stdin = child.stdin.as_mut().ok_or("Failed to open python stdin")?;
+        stdin
+            .write_all(messages.as_bytes())
+            .map_err(|e| format!("Failed to write to python stdin: {}", e))?;
+    }
+
+    let output = child
+        .wait_with_output()
+        .map_err(|e| format!("Failed to wait for python: {}", e))?;
+
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    } else {
+        Err(format!("Python error: {}", String::from_utf8_lossy(&output.stderr)))
+    }
 }
 
 #[command]
@@ -75,7 +107,7 @@ async fn get_available_models() -> Result<String, String> {
     let env_path = src_tauri_dir.parent().unwrap().join("panopticon-python").join(".env");
 
     if !env_path.exists() {
-        return Ok("google/gemma-4-31b-it:free,google/gemma-4-26b-a4b-it:free,qwen/qwen3.8-27b:free".to_string());
+        return Ok("nvidia/nemotron-3.5-lightning:free,nvidia/nemotron-3-ultra-550b-a55b:free,nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free".to_string());
     }
 
     let content = std::fs::read_to_string(&env_path).map_err(|e| format!("Failed to read .env: {}", e))?;
@@ -86,10 +118,11 @@ async fn get_available_models() -> Result<String, String> {
             return Ok(models.to_string());
         }
     }
-    Ok("google/gemma-4-31b-it:free".to_string())
+    Ok("nvidia/nemotron-3.5-lightning:free".to_string())
 }
 #[command]
-async fn export_markdown(filename: String, content: String) -> Result<String, String> {
+async fn export_markdown(filename: String, content: String, dir: String) -> Result<String, String> {
+    // Sanitize filename: strip everything except safe chars to prevent path traversal
     let safe_name: String = filename
         .chars()
         .filter(|c| c.is_alphanumeric() || matches!(c, '-' | '_' | '.'))
@@ -98,13 +131,20 @@ async fn export_markdown(filename: String, content: String) -> Result<String, St
         return Err("Invalid filename".to_string());
     }
 
-    let home = std::env::var("USERPROFILE")
-        .or_else(|_| std::env::var("HOME"))
-        .map_err(|e| format!("Cannot resolve home directory: {}", e))?;
-    let dir = std::path::Path::new(&home).join("Documents").join("Panopticon");
-    std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create export dir: {}", e))?;
+    // Resolve target directory: user-configured path or default Documents/Panopticon
+    let target_dir = if dir.trim().is_empty() {
+        let home = std::env::var("USERPROFILE")
+            .or_else(|_| std::env::var("HOME"))
+            .map_err(|e| format!("Cannot resolve home directory: {}", e))?;
+        std::path::PathBuf::from(home).join("Documents").join("Panopticon")
+    } else {
+        std::path::PathBuf::from(dir.trim())
+    };
 
-    let path = dir.join(&safe_name);
+    std::fs::create_dir_all(&target_dir)
+        .map_err(|e| format!("Failed to create export dir {:?}: {}", target_dir, e))?;
+
+    let path = target_dir.join(&safe_name);
     std::fs::write(&path, content).map_err(|e| format!("Failed to write file: {}", e))?;
     Ok(path.to_string_lossy().into_owned())
 }
