@@ -9,15 +9,42 @@ import os
 import aiosqlite
 import asyncio
 import networkx as nx
+import httpx
 
 # Resolve DB path relative to this script's location
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)  # panopticon-desktop/
-DB_PATH = os.path.join(PROJECT_ROOT, "panopticon.db")
+DB_PATH = os.path.join(SCRIPT_DIR, "panopticon.db")
 
 MAX_GRAPH_NODES = 100  # Reduced for readability
 MAX_EGO_DEPTH = 2
+# In-memory CISA KEV catalog cache (loaded once per process lifetime)
+_kev_cache: dict[str, dict] = {}
+_kev_loaded = False
+CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 
+
+def _ensure_kev_loaded() -> None:
+    """Lazy-load the CISA Known Exploited Vulnerabilities catalog."""
+    global _kev_cache, _kev_loaded
+    if _kev_loaded:
+        return
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            resp = client.get(CISA_KEV_URL)
+            if resp.status_code == 200:
+                data = resp.json()
+                for vuln in data.get("vulnerabilities", []):
+                    cve_id = vuln.get("cveID", "")
+                    if cve_id:
+                        _kev_cache[cve_id] = {
+                            "date_added": vuln.get("dateAdded", ""),
+                            "due_date": vuln.get("dueDate", ""),
+                            "required_action": vuln.get("requiredAction", ""),
+                            "known_ransomware_usage": vuln.get("knownRansomwareCampaignUse", "Unknown"),
+                        }
+    except Exception as e:
+        print(f"KEV load error: {e}", file=sys.stderr)
+    _kev_loaded = True
 
 async def get_cve_details(db, cve_id: str) -> dict:
     """Retrieve full CVE information from the database."""
@@ -51,6 +78,13 @@ async def get_cve_details(db, cve_id: str) -> dict:
     ) as cursor:
         rows = await cursor.fetchall()
         details["affected_products"] = [dict(row) for row in rows]
+
+    # Enrich with CISA KEV status
+    _ensure_kev_loaded()
+    kev_info = _kev_cache.get(cve_id)
+    details["in_cisa_kev"] = kev_info is not None
+    if kev_info:
+        details["kev_details"] = kev_info
 
     return details
 

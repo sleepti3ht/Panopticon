@@ -3,6 +3,7 @@ Configuration for Panopticon CVE Map.
 Loads environment variables and defines application constants.
 """
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,8 +25,9 @@ MAX_EGO_DEPTH = 2
 MIN_PUBLISH_YEAR = 2020
 INGEST_LOOKBACK_DAYS = 90
 INGEST_CHUNK_DAYS = 110
-# Database
-DB_PATH = "panopticon.db"
+
+# Database (absolute path, independent of the current working directory)
+DB_PATH = str(Path(__file__).resolve().parent / "panopticon.db")
 
 # Debug helper (NOT for production):
 # from utils import mask_api_key

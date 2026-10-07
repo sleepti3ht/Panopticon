@@ -825,3 +825,20 @@ body.light-theme ::-webkit-scrollbar-thumb:hover { background: var(--text-second
 #btn-expand-details svg {
   transition: transform 0.2s;
 }
+
+/* CISA KEV alert row in details panel */
+.kev-alert {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: var(--danger);
+}
+
+.kev-alert .label {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.kev-alert .value {
+  color: var(--danger);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}

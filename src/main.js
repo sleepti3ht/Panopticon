@@ -148,7 +148,15 @@ function initGraph(data) {
       if (cvss >= 9.0) color = "#ef4444";
       else if (cvss >= 7.0) color = "#f97316";
       else if (cvss < 4.0) color = "#22c55e";
-      node.color = { background: color, border: color, highlight: { background: color, border: "#ffffff" } };
+      // KEV-CVEs get a thick pulsing red border regardless of CVSS
+      const isKev = node.details.in_cisa_kev === true;
+      node.color = {
+        background: color,
+        border: isKev ? "#ef4444" : color,
+        highlight: { background: color, border: "#ffffff" }
+      };
+      node.borderWidth = isKev ? 3 : 1;
+      node.borderWidthSelected = isKev ? 5 : 2;
     }
     if (node.group === "vendor") {
       node.color = { background: "#3b82f6", border: "#60a5fa", highlight: { background: "#60a5fa", border: "#ffffff" } };
@@ -636,6 +644,13 @@ function showNodeDetails(node) {
 
       <div class="detail-row"><span class="label">CVSS</span><span class="value">${d.cvss_score ?? "N/A"}</span></div>
       <div class="detail-row"><span class="label">Severity</span><span class="value ${sevClass}">${d.severity || "UNKNOWN"}</span></div>
+      ${d.in_cisa_kev ? `
+      <div class="detail-row kev-alert">
+        <span class="label">🔥 CISA KEV</span>
+        <span class="value">ACTIVELY EXPLOITED</span>
+      </div>
+      <div class="detail-row"><span class="label">KEV Due</span><span class="value">${d.kev_details?.due_date || "N/A"}</span></div>
+      ` : ''}
       <div class="detail-row"><span class="label">CWE</span><span class="value">${d.cwe_ids?.join(", ") || "N/A"}</span></div>
       <div class="detail-row"><span class="label">Published</span><span class="value">${d.published_date ? d.published_date.split("T")[0] : "N/A"}</span></div>
       <div class="detail-section"><h4>Description</h4><p>${d.description || "No description available."}</p></div>
