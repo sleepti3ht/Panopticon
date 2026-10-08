@@ -36,12 +36,17 @@ fn run_python(script_name: &str, args: &[&str]) -> Result<String, String> {
 // ==========================================
 
 #[command]
-async fn get_graph_data(vendor: Option<String>, min_year: Option<i32>) -> Result<String, String> {
-    let mut args: Vec<String> = Vec::new();
-    if let Some(v) = vendor { args.push(v); }
-    if let Some(y) = min_year { args.push(y.to_string()); }
-    let refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-    run_python("graph_builder.py", &refs)
+async fn get_graph_data(
+    vendor: Option<String>,
+    min_year: Option<i32>,
+    focus_cve: Option<String>,
+) -> Result<String, String> {
+    // Always pass three positional slots; empty string = absent.
+    // Skipping None values would shift positions and corrupt the contract.
+    let vendor_arg = vendor.unwrap_or_default();
+    let year_arg = min_year.map(|y| y.to_string()).unwrap_or_default();
+    let focus_arg = focus_cve.unwrap_or_default();
+    run_python("graph_builder.py", &[&vendor_arg, &year_arg, &focus_arg])
 }
 
 #[command]

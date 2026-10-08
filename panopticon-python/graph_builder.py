@@ -90,9 +90,24 @@ async def get_cve_details(db, cve_id: str) -> dict:
 
 
 async def build_graph_for_vendor(
-    vendor: str = None, min_year: int = None, depth: int = MAX_EGO_DEPTH
+    vendor: str = None,
+    min_year: int = None,
+    depth: int = MAX_EGO_DEPTH,
+    focus_cve: str = None,
 ) -> dict:
-    """Build subgraph for vis-network rendering."""
+    """Build subgraph for vis-network rendering.
+    If focus_cve is set and vendor is not, resolve the CVE's primary vendor
+    so the target node is guaranteed to be present in the graph."""
+    if not vendor and focus_cve:
+        async with aiosqlite.connect(DB_PATH) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT vendor FROM affected_products WHERE cve_id = ? ORDER BY rowid LIMIT 1",
+                (focus_cve,),
+            ) as cursor:
+                row = await cursor.fetchone()
+                vendor = row["vendor"] if row else None
+
     G = nx.Graph()
     cve_details_cache = {}
 
@@ -148,6 +163,7 @@ async def build_graph_for_vendor(
                 f"""
                 SELECT cve_id, cvss_score, severity
                 FROM cves {year_filter}
+                ORDER BY published_date DESC
                 LIMIT 100
                 """,
                 year_param,
@@ -214,6 +230,9 @@ async def build_graph_for_vendor(
                 "published_date": details.get("published_date", ""),
                 "affected_products": details.get("affected_products", []),
                 "references": details.get("references", []),
+                # KEV flags must survive the projection whitelist
+                "in_cisa_kev": details.get("in_cisa_kev", False),
+                "kev_details": details.get("kev_details"),
             }
 
         nodes.append(node_data)
@@ -226,11 +245,10 @@ async def build_graph_for_vendor(
 
 
 if __name__ == "__main__":
-    vendor = sys.argv[1] if len(sys.argv) > 1 else None
-    min_year = (
-        int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else None
-    )
-    depth = int(sys.argv[3]) if len(sys.argv) > 3 else MAX_EGO_DEPTH
+    # Empty string means "absent": positional slots must stay aligned
+    vendor = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else None
+    min_year = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else None
+    focus_cve = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] else None
 
-    result = asyncio.run(build_graph_for_vendor(vendor, min_year, depth))
+    result = asyncio.run(build_graph_for_vendor(vendor, min_year, focus_cve=focus_cve))
     print(json.dumps(result))

@@ -743,7 +743,7 @@ document.getElementById("btn-load").addEventListener("click", async () => {
   detailsPanel.classList.add("hidden");
 
   try {
-    const rawData = await invoke("get_graph_data", { vendor, minYear });
+    const rawData = await invoke("get_graph_data", { vendor, minYear, focusCve: null });
     const graphData = JSON.parse(rawData);
     initGraph(graphData);
     statusLog.textContent = `Loaded ${graphData.nodes.length} nodes.`;
@@ -980,7 +980,7 @@ async function loadSpecificCVE(cveId, options = {}) {
     }
     detailsPanel.classList.add("hidden");
 
-    const rawData = await invoke("get_graph_data", { vendor, minYear });
+    const rawData = await invoke("get_graph_data", { vendor, minYear, focusCve: cveId });
     const graphData = JSON.parse(rawData);
     const cveNode = graphData.nodes.find(n => n.label === cveId);
 
