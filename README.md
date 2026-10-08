@@ -1,7 +1,6 @@
-
 <div align="center">
 
-<a href="https://github.com/sleepti3ht/Panopticon"><img src="https://raw.githubusercontent.com/sleepti3ht/Panopticon/main/src-tauri/icons/icon.png"  width="140" alt="Panopticon logo"/></a>
+<a href="https://github.com/sleepti3ht/Panopticon"><img src="https://raw.githubusercontent.com/sleepti3ht/Panopticon/main/src-tauri/icons/icon.png" width="140" alt="Panopticon logo"/></a>
 
 # Panopticon
 
@@ -24,10 +23,10 @@ Built on **Tauri 2** (Rust shell), **Python** (async AI + MCP client), and **Van
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/01-dashboard-dark.png" width="49%" alt="Threat graph dashboard, dark theme" />
-  <img src="screenshots/02-cve-chat-dark.png" width="49%" alt="CVE details with AI mitigation chat and CISA KEV badge" />
-  <img src="screenshots/03-reports-panel.png" width="49%" alt="Saved conversations with pins and tags" />
-  <img src="screenshots/04-dashboard-light.png" width="49%" alt="Light theme" />
+  <img src="docs/img/01-hero-log4shell.png" width="49%" alt="Threat graph centered on Log4Shell with CVSS-colored nodes" />
+  <img src="docs/img/04-chat-versions.png" width="49%" alt="CVE details with AI mitigation chat and version indicator" />
+  <img src="docs/img/05-reports.png" width="49%" alt="Saved conversations with pins and tags" />
+  <img src="docs/img/06-theme-dark.png" width="49%" alt="Dark theme" />
 </p>
 
 ---
@@ -71,7 +70,7 @@ The ingestor uses a rolling window counted from request time and auto-chunks req
 | `OPENROUTER_API_KEY` | yes | LLM gateway key |
 | `NVD_API_KEY` | no | raises NVD rate limit for ingestion |
 | `AVAILABLE_MODELS` | no | comma-separated model list for the chat selector |
-| `DEFAULT_MODEL` | no | preselected chat model |
+| `DEFAULT_MODEL` | no | preselected chat model (default: `nemotron-3.5-lightning`) |
 
 ## 🔋 Batteries Included
 
@@ -110,7 +109,7 @@ The ingestor uses a rolling window counted from request time and auto-chunks req
 - Click a report → rebuild graph around that CVE (default → vendor-scoped fallback)
 - Pins 📌 and tags (up to 8 per report); pinned reports float to the top
 - Bulk selection + bulk delete, single delete with confirmation
-- Markdown export to a configurable directory (Settings → Export Directory)
+- Markdown export to a configurable directory (Settings → Export Directory) with explicit AI-generated draft disclosure banner
 - Filter box across CVE id, title and tags
 - Expand/collapse details panel for long reads (state persisted)
 - `save_report.py purge` cleans legacy rows with invalid JSON payloads
@@ -125,8 +124,8 @@ The ingestor uses a rolling window counted from request time and auto-chunks req
 ## 📸 Preview
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/sleepti3ht/Panopticon/main/screenshots/graph-dark.png" alt="Panopticon graph view" width="100%" />
-  <em>Vendor↔CVE graph · dark theme · purple severity accents</em>
+  <img src="https://raw.githubusercontent.com/sleepti3ht/Panopticon/main/docs/img/01-hero-log4shell.png" alt="Panopticon threat graph centered on CVE-2021-44228" width="100%" />
+  <em>Vendor↔CVE force-directed graph · camera focus on critical node · light theme</em>
 </p>
 
 ## Why Panopticon
@@ -175,28 +174,28 @@ The Rust layer is deliberately thin: it owns the window, routes IPC, and spawns 
 ## 🧩 Project structure
 
 ```
-Panopticon/                      # repo root = desktop project
-├── src/                         # Vanilla JS + CSS
-│   ├── main.js                  # UI, graph, chat, panels, reports
-│   └── styles.css               # Dark/light theme (purple accents)
-├── src-tauri/                   # Rust shell + IPC commands
-│   ├── src/lib.rs               # Thin handlers: routing + process spawn
-│   └── tauri.conf.json          # Window defaults, permissions
-├── panopticon-python/           # Backend
-│   ├── ai_agent.py              # LLM orchestration + MCP client
-│   ├── mcp_server.py            # MCP tools: CVE context, KEV, CWE stats
-│   ├── graph_builder.py         # Vendor↔CVE graph export + KEV flags
-│   ├── global_search.py         # Cross-table search
-│   ├── get_vendors.py           # Vendor list with CVE counts
-│   ├── save_report.py           # chat_reports CRUD + migrations
-│   ├── ingestor.py              # NVD → SQLite rolling-window pipeline
-│   ├── db.py                    # Schema + atomic inserts
-│   ├── config.py                # Env-driven constants
-│   ├── utils.py                 # Secret masking helpers
-│   ├── seed_mock.py             # 50 synthetic CVEs for demos
-│   └── panopticon.db            # (auto-created, gitignored)
-├── screenshots/                 # README gallery
-├── docs/                        # hero images
+Panopticon/ # repo root = desktop project
+├── src/ # Vanilla JS + CSS
+│ ├── main.js # UI, graph, chat, panels, reports
+│ └── styles.css # Dark/light theme (purple accents)
+├── src-tauri/ # Rust shell + IPC commands
+│ ├── src/lib.rs # Thin handlers: routing + process spawn
+│ └── tauri.conf.json # Window defaults, permissions
+── panopticon-python/ # Backend
+│ ├── ai_agent.py # LLM orchestration + MCP client
+│ ├── mcp_server.py # MCP tools: CVE context, KEV, CWE stats
+│ ├── graph_builder.py # Vendor↔CVE graph export + KEV flags
+│ ├── global_search.py # Cross-table search
+│ ├── get_vendors.py # Vendor list with CVE counts
+│ ├── save_report.py # chat_reports CRUD + migrations
+│ ├── ingestor.py # NVD → SQLite rolling-window pipeline
+│ ├── db.py # Schema + atomic inserts
+│ ├── config.py # Env-driven constants
+│ ├── utils.py # Secret masking + degenerate-repetition helpers
+│ ├── seed_mock.py # 50 synthetic CVEs for demos
+│ └── panopticon.db # (auto-created, gitignored)
+├── docs/
+│ └── img/ # README + article screenshots
 ├── index.html
 ├── vite.config.js
 └── package.json
