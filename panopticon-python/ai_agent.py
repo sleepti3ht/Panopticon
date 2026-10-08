@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import httpx
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from utils import sanitize_degenerate
 
 load_dotenv()
 
@@ -133,6 +134,9 @@ class CVEAgent:
                     "temperature": temperature,
                     "max_tokens": max_tokens,
                     "top_p": 0.9,
+                    # Sampling penalties reduce repetition collapse on free-tier models
+                    "frequency_penalty": 0.4,
+                    "presence_penalty": 0.3,
                 },
                 timeout=60.0,
             )
@@ -179,7 +183,10 @@ class CVEAgent:
                 return f"Error: Unexpected API response format (no choices)"
 
             result_text = data["choices"][0]["message"]["content"]
-            
+            # Sanitize before caching: poisoned responses must not persist for 1h
+            if sanitize_degenerate(result_text) != result_text:
+                logger.warning(f"Degenerate repetition detected and truncated ({self.model_name})")
+                result_text = sanitize_degenerate(result_text)            
             # Store in cache (evict oldest if at capacity)
             import time
             if len(_response_cache) >= CACHE_MAX_SIZE:
