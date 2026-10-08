@@ -222,6 +222,12 @@ Panopticon/ # repo root = desktop project
 - [ ] Encrypted `.panopticon` export/import for team handoffs
 - [ ] CI release builds (GitHub Actions artifacts per OS)
 
+##  Deep Dive
+
+Read the full architectural breakdown on dev.to: [Building Panopticon: A Local-First CVE Intelligence Map with Tauri 2 + Rust + Python](https://dev.to/sleepti3ht/building-panopticon-a-local-first-cve-intelligence-map-with-tauri-2-rust-python-4p6p)
+
+Covers sampling penalties for LLM repetition collapse, stdin transport bypassing Windows CLI limits, CISA KEV projection bugs, and why vanilla JS won over React for this tool.
+
 ## 🧑‍🍳 Related
 
 - **[tauri-ui](https://github.com/agmmnn/tauri-ui)** — inspired the dark/purple visual direction and the README structure
