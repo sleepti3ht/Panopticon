@@ -15,7 +15,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(SCRIPT_DIR, "panopticon.db")
 
 
-async def get_vendors(query: str = None, limit: int = 50) -> list:
+async def get_vendors(query: str | None = None, limit: int = 50) -> list:
     """Get list of unique vendors with optional filtering."""
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row

@@ -95,10 +95,10 @@ async def get_cve_details(db, cve_id: str) -> dict:
 
 
 async def build_graph_for_vendor(
-    vendor: str = None,
-    min_year: int = None,
+    vendor: str | None = None,
+    min_year: int | None = None,
     depth: int = MAX_EGO_DEPTH,
-    focus_cve: str = None,
+    focus_cve: str | None = None,
 ) -> dict:
     """Build subgraph for vis-network rendering.
     If focus_cve is set and vendor is not, resolve the CVE's primary vendor

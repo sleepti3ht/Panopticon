@@ -137,7 +137,7 @@ def parse_nvd_cve(vuln: dict) -> dict:
     }
 
 
-async def fetch_latest_cves(limit: int = 4000, lookback_days: int = None):
+async def fetch_latest_cves(limit: int = 4000, lookback_days: int | None = None):
     """
     Fetch the most recent CVEs with CPE data using a rolling window.
     The window ends at request time (datetime.now) and walks backwards
