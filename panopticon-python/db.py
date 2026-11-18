@@ -4,6 +4,7 @@ Uses aiosqlite for async SQLite operations.
 """
 
 import aiosqlite
+
 from config import DB_PATH
 
 SCHEMA = """

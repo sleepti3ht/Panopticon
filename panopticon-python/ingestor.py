@@ -4,6 +4,7 @@ import sys
 from datetime import UTC, datetime, timedelta
 
 import aiohttp
+
 from config import (
     INGEST_CHUNK_DAYS,
     INGEST_LOOKBACK_DAYS,

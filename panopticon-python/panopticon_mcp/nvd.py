@@ -45,6 +45,101 @@ def _cache_put(cve_id: str, data: dict) -> None:
     while len(_nvd_cache) > config.NVD_CACHE_MAX_ENTRIES:
         _nvd_cache.popitem(last=False)
 
+def normalize_cve(cve_data: dict) -> dict:
+    """Normalize raw NVD API response to match local DB schema."""
+    cve_id = cve_data.get("id", "")
+
+    # Description (prefer English)
+    descriptions = cve_data.get("descriptions", [])
+    description = next(
+        (d["value"] for d in descriptions if d.get("lang") == "en"),
+        "No description available",
+    )[:2000]
+
+    # CVSS extraction: v3.1 > v3.0 > v2
+    metrics = cve_data.get("metrics", {})
+    cvss_score = 0.0
+    cvss_vector = ""
+    severity = "UNKNOWN"
+
+    for version_key in ["cvssMetricV31", "cvssMetricV30"]:
+        if metrics.get(version_key):
+            metric = metrics[version_key][0]
+            cvss_info = metric.get("cvssData", {})
+            cvss_score = cvss_info.get("baseScore", 0.0)
+            cvss_vector = cvss_info.get("vectorString", "")
+            severity = cvss_info.get("baseSeverity", "UNKNOWN").upper()
+            break
+
+    if severity == "UNKNOWN" and "cvssMetricV2" in metrics and metrics["cvssMetricV2"]:
+        metric = metrics["cvssMetricV2"][0]
+        cvss_info = metric.get("cvssData", {})
+        cvss_score = cvss_info.get("baseScore", 0.0)
+        cvss_vector = cvss_info.get("vectorString", "")
+        severity = (
+            "HIGH" if cvss_score >= 7.0 else "MEDIUM" if cvss_score >= 4.0 else "LOW"
+        )
+
+    if severity == "UNKNOWN" and cvss_score > 0:
+        if cvss_score >= 9.0:
+            severity = "CRITICAL"
+        elif cvss_score >= 7.0:
+            severity = "HIGH"
+        elif cvss_score >= 4.0:
+            severity = "MEDIUM"
+        else:
+            severity = "LOW"
+
+    # CWE IDs
+    cwe_ids = []
+    for weakness in cve_data.get("weaknesses", []):
+        for desc in weakness.get("description", []):
+            cwe_val = desc.get("value", "")
+            if cwe_val.startswith("CWE-") and cwe_val not in cwe_ids:
+                cwe_ids.append(cwe_val)
+
+    # Affected products from CPE matches
+    affected_products = []
+    for cfg in cve_data.get("configurations", []):
+        for node in cfg.get("nodes", []):
+            for match in node.get("cpeMatch", []):
+                if match.get("vulnerable") and "criteria" in match:
+                    parts = match["criteria"].split(":")
+                    if len(parts) >= 6:
+                        affected_products.append(
+                            {
+                                "vendor": parts[3].lower().replace("_", " "),
+                                "product": parts[4].lower().replace("_", " "),
+                                "version": parts[5] if parts[5] != "*" else None,
+                            }
+                        )
+
+    # References
+    references = []
+    for ref in cve_data.get("references", []):
+        url = ref.get("url", "")
+        if url:
+            references.append(
+                {
+                    "url": url,
+                    "source": ref.get("source", ""),
+                    "tags": ",".join(ref.get("tags", [])),
+                }
+            )
+
+    return {
+        "cve_id": cve_id,
+        "description": description,
+        "cvss_score": cvss_score,
+        "cvss_vector": cvss_vector,
+        "severity": severity,
+        "published_date": cve_data.get("published", ""),
+        "last_modified": cve_data.get("lastModified", ""),
+        "cwe_ids": cwe_ids,
+        "affected_products": affected_products,
+        "references": references,
+        "source": "nvd_live",
+    }
 
 def cache_size() -> int:
     """Current number of cached NVD entries (for db_status tool)."""
