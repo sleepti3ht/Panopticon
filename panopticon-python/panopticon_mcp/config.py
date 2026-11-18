@@ -1,5 +1,5 @@
 """
-Configuration for panopticon-mcp.
+Configuration for panopticon-mcp-server.
 Loads environment variables, defines constants, resolves DB path via cascade.
 """
 

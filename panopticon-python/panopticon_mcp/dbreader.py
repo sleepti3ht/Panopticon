@@ -41,10 +41,13 @@ async def get_cve(cve_id: str) -> dict | None:
                 "SELECT vendor, product, version FROM affected_products WHERE cve_id = ?",
                 (cve_id,),
             ) as cursor:
-                details["affected_products"] = [dict(r) for r in await cursor.fetchall()]
+                details["affected_products"] = [
+                    dict(r) for r in await cursor.fetchall()
+                ]
 
             async with db.execute(
-                "SELECT url, source, tags FROM references_links WHERE cve_id = ?", (cve_id,)
+                "SELECT url, source, tags FROM references_links WHERE cve_id = ?",
+                (cve_id,),
             ) as cursor:
                 details["references"] = [dict(r) for r in await cursor.fetchall()]
 
@@ -103,7 +106,9 @@ async def cwe_stats(cwe_ids: list[str]) -> list[dict]:
                     (cwe_id,),
                 ) as cursor:
                     row = await cursor.fetchone()
-                    stats.append({"cwe_id": cwe_id, "related_cve_count": row[0] if row else 0})
+                    stats.append(
+                        {"cwe_id": cwe_id, "related_cve_count": row[0] if row else 0}
+                    )
     except Exception as e:  # noqa: BLE001
         print(f"CWE stats error: {e}", file=sys.stderr)
     return stats

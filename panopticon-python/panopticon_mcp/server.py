@@ -37,7 +37,8 @@ async def search_cves(vendor: str, min_cvss: float = 0.0, limit: int = 50) -> st
     for r in rows:
         r["in_cisa_kev"] = kev.lookup(r["cve_id"]) is not None
     return json.dumps(
-        {"vendor": vendor, "min_cvss": min_cvss, "count": len(rows), "cves": rows}, indent=2
+        {"vendor": vendor, "min_cvss": min_cvss, "count": len(rows), "cves": rows},
+        indent=2,
     )
 
 
@@ -48,7 +49,12 @@ async def is_cve_exploited(cve_id: str) -> str:
     kev_info = kev.lookup(cve_id)
     if kev_info:
         return json.dumps(
-            {"cve_id": cve_id, "in_cisa_kev": True, "actively_exploited": True, **kev_info},
+            {
+                "cve_id": cve_id,
+                "in_cisa_kev": True,
+                "actively_exploited": True,
+                **kev_info,
+            },
             indent=2,
         )
     return json.dumps(
@@ -113,14 +119,19 @@ async def db_status() -> str:
 
 def main() -> None:
     """CLI entry point: resolve config, announce mode, run transport."""
-    parser = argparse.ArgumentParser(prog="panopticon-mcp")
-    parser.add_argument("--db-path", help="Path to panopticon.db (overrides env/auto-discovery)")
+    parser = argparse.ArgumentParser(prog="panopticon-mcp-server")
+    parser.add_argument(
+        "--db-path", help="Path to panopticon.db (overrides env/auto-discovery)"
+    )
     parser.add_argument("--transport", choices=["stdio", "sse"], default="stdio")
     args = parser.parse_args()
 
     config.DB_PATH = config.resolve_db_path(args.db_path)
     mode = "local+live" if config.DB_PATH else "live-only (NVD + CISA KEV)"
-    print(f"panopticon-mcp: db={config.DB_PATH or 'not found'} mode={mode}", file=sys.stderr)
+    print(
+        f"panopticon-mcp-server: db={config.DB_PATH or 'not found'} mode={mode}",
+        file=sys.stderr,
+    )
 
     mcp.run(transport=args.transport)
 

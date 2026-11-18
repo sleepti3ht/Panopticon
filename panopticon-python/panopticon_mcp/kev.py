@@ -7,9 +7,7 @@ import httpx
 
 from panopticon_mcp import config
 
-CISA_KEV_URL = (
-    "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
-)
+CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 
 _kev_cache: dict[str, dict] = {}
 _kev_loaded = False
@@ -29,7 +27,10 @@ async def ensure_loaded() -> None:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.get(CISA_KEV_URL)
                 if resp.status_code != 200:
-                    print(f"Failed to load CISA KEV: HTTP {resp.status_code}", file=sys.stderr)
+                    print(
+                        f"Failed to load CISA KEV: HTTP {resp.status_code}",
+                        file=sys.stderr,
+                    )
                     _kev_loaded = True
                     return
                 data = resp.json()
@@ -49,7 +50,10 @@ async def ensure_loaded() -> None:
                     "vendor": vuln.get("vendorProject", ""),
                     "short_description": vuln.get("shortDescription", ""),
                 }
-            print(f"Loaded {len(_kev_cache)} entries from CISA KEV catalog", file=sys.stderr)
+            print(
+                f"Loaded {len(_kev_cache)} entries from CISA KEV catalog",
+                file=sys.stderr,
+            )
         except Exception as e:  # noqa: BLE001
             print(f"CISA KEV load error: {e}", file=sys.stderr)
         _kev_loaded = True

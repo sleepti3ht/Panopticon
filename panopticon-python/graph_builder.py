@@ -27,7 +27,7 @@ CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_v
 
 def _ensure_kev_loaded() -> None:
     """Lazy-load the CISA Known Exploited Vulnerabilities catalog."""
-    global _kev_cache, _kev_loaded
+    global _kev_cache, _kev_loaded  # noqa: PLW0602
     if _kev_loaded:
         return
     try:
@@ -46,7 +46,7 @@ def _ensure_kev_loaded() -> None:
                                 "knownRansomwareCampaignUse", "Unknown"
                             ),
                         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"KEV load error: {e}", file=sys.stderr)
     _kev_loaded = True
 

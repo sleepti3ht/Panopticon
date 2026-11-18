@@ -58,13 +58,14 @@ src-tauri/target/
 *.log
 .aider*
 
-# panopticon-mcp: build artifacts
+# panopticon-mcp-server: build artifacts
 panopticon-python/dist/
 panopticon-python/*.egg-info/
 panopticon-python/.ruff_cache/
 panopticon-python/panopticon_mcp/.ruff_cache/
+panopticon-python/uv.lock
 
-# panopticon-mcp: debug/test files
+# panopticon-mcp-server: debug/test files
 test_mcp_requests.txt
 test_mcp_client.py
 test_all_tools.py

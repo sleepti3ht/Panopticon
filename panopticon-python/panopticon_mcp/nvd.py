@@ -45,6 +45,7 @@ def _cache_put(cve_id: str, data: dict) -> None:
     while len(_nvd_cache) > config.NVD_CACHE_MAX_ENTRIES:
         _nvd_cache.popitem(last=False)
 
+
 def normalize_cve(cve_data: dict) -> dict:
     """Normalize raw NVD API response to match local DB schema."""
     cve_id = cve_data.get("id", "")
@@ -141,6 +142,7 @@ def normalize_cve(cve_data: dict) -> dict:
         "source": "nvd_live",
     }
 
+
 def cache_size() -> int:
     """Current number of cached NVD entries (for db_status tool)."""
     return len(_nvd_cache)
@@ -175,7 +177,10 @@ async def fetch_cve(cve_id: str) -> dict | None:
                     print(f"NVD API {resp.status_code} for {cve_id}", file=sys.stderr)
                     return None
                 if resp.status_code != 200:
-                    print(f"NVD API error {resp.status_code} for {cve_id}", file=sys.stderr)
+                    print(
+                        f"NVD API error {resp.status_code} for {cve_id}",
+                        file=sys.stderr,
+                    )
                     return None
 
                 vulns = resp.json().get("vulnerabilities", [])

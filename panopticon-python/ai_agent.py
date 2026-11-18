@@ -181,7 +181,7 @@ class CVEAgent:
                             if token:
                                 full_text += token
                                 # If in daemon mode, emit JSON stream chunk; else raw text
-                                global _current_daemon_request_id
+                                global _current_daemon_request_id  # noqa: PLW0602
                                 if _current_daemon_request_id is not None:
                                     print(
                                         json.dumps(
@@ -240,7 +240,7 @@ CRITICAL INSTRUCTIONS:
                 await self._exit_stack.aclose()
             except (RuntimeError, ExceptionGroup):
                 logger.debug("Suppressed anyio teardown noise during MCP close")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning(f"Non-fatal error during agent cleanup: {e}")
 
         await self.http_client.aclose()
@@ -285,7 +285,7 @@ Respond in the same language as the user's question."""
     # Try streaming first, fallback to non-streaming
     try:
         response = await agent._call_llm(full_messages, stream=True)
-    except Exception:
+    except Exception:  # noqa: BLE001
         # Fallback: non-streaming mode
         response = await agent._call_llm(full_messages, stream=False)
 
@@ -387,7 +387,7 @@ async def daemon_loop():
                 print(json.dumps(error_response), flush=True)
 
         except Exception as e:
-            logger.exception(f"Daemon loop error: {e}")
+            logger.exception(f"Daemon loop error: {e}")  # noqa: TRY401
             error_response = {"error": str(e)}
             print(json.dumps(error_response), flush=True)
 

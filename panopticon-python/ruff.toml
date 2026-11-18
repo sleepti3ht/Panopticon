@@ -1,0 +1,5 @@
+target-version = "py312"
+
+[lint.per-file-ignores]
+"mcp_server.py" = ["E402"]
+"utils.py" = ["E402"]

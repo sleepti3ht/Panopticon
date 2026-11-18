@@ -107,7 +107,7 @@ async def fetch_from_nvd_api(cve_id: str) -> dict | None:
     except httpx.RequestError as e:
         print(f"NVD request error for {cve_id}: {e}", file=sys.stderr)
         return None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"NVD fallback unexpected error for {cve_id}: {e}", file=sys.stderr)
         return None
 
@@ -218,7 +218,7 @@ async def _ensure_kev_loaded():
     Lazy-load CISA Known Exploited Vulnerabilities catalog into memory.
     Called once on first KEV-related query, then cached for process lifetime.
     """
-    global _kev_loaded, _kev_cache
+    global _kev_loaded, _kev_cache  # noqa: PLW0602
 
     if _kev_loaded:
         return
@@ -309,7 +309,7 @@ async def _get_cve_from_db(cve_id: str) -> dict | None:
             details["source"] = "local_db"
             return details
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"DB error for {cve_id}: {e}", file=sys.stderr)
         return None
 
@@ -405,7 +405,7 @@ async def search_cves(vendor: str, min_cvss: float = 0.0, limit: int = 50) -> st
                 indent=2,
             )
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return json.dumps({"error": f"Search failed: {e}"})
 
 
@@ -479,7 +479,7 @@ async def get_cwe_hierarchy(cve_id: str) -> str:
                         row = await cursor.fetchone()
                         count = row[0] if row else 0
                         cwe_stats.append({"cwe_id": cwe_id, "related_cve_count": count})
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"CWE stats error: {e}", file=sys.stderr)
 
     return json.dumps(
