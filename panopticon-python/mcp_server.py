@@ -255,7 +255,7 @@ async def _ensure_kev_loaded():
             )
             _kev_loaded = True
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"CISA KEV load error: {e}", file=sys.stderr)
         _kev_loaded = True  # Prevent retry storms
 
